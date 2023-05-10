@@ -6,7 +6,7 @@
 
 import pandas as pd
 
-data_an = open("myCHD801FR_20221123_normal_annotated.txt")#open and read file
+data_an = open("CHDCtrl1_CHD801FR_normal/CHD801FR_20221123_normal_annotated.txt")#open and read file
 r = data_an.read()
 data_an.close()
 
@@ -31,7 +31,7 @@ annote["date_time"] = pd.to_datetime(annote["date_time"])
 # In[2]:
 
 
-eeg_file = open("C:\\Users\\regan\\Downloads\\CHDCtrl1_CHD801FR_normal\\CHD801FR_20221123_normal.txt")
+eeg_file = open("CHDCtrl1_CHD801FR_normal/CHD801FR_20221123_normal.txt")
 r_eeg = eeg_file.read()
 eeg_file.close()
 
@@ -42,7 +42,6 @@ e_split = list(r_eeg.split("\n"))
 
 
 # In[3]:
-
 
 spaces = []
 for line in e_split: 
@@ -90,7 +89,7 @@ def makeplot(x):
     fig = plt.figure(figsize=(15,10))
     ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
 
-    plt.plot(eeg[1][x:x+200], eeg[2][x:x+200])#if you want to change how many points to plot just swap out the 200s
+    plt.plot(eeg[1][x:x+200], eeg[2][x:x+200]) #if you want to change how many points to plot just swap out the 200s
     
     ax.set_yticks([-.5, 0, .5])
     ax.set_xticks(eeg[1][xAxis]) 
