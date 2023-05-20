@@ -1,4 +1,4 @@
-from adam import *
+from inputMassager import *
 
 #Grabs one dataframe and prints the pandas df and the tensor
 
@@ -8,5 +8,5 @@ test.askForInput("Blah!")
 # df = test.getDfFromText()
 # print(df)
 print("getting tensor")
-ten = test.getTensorFromText()
+ten = test.getTensorFromText(50)
 print(ten)
