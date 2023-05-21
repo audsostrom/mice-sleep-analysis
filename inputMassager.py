@@ -165,8 +165,8 @@ class inputMassager():
 
 						#add our new datapoints to working channels
 
-						working_c1.append(data_list[2])
-						working_c2.append(data_list[3])
+						working_c1.append(np.float16(data_list[2]))
+						working_c2.append(np.float16(data_list[3]))
 						#print("data 2", working_c1)
 						#print("data 3", working_c2)
 						datapoint_count +=1
