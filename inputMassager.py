@@ -224,13 +224,16 @@ def find_time_labels(dataframe, filepath):
 	data_an.close()
 
 	rows = list(r.split("\n")) # list of each row (strings)
+	index = 0
 	for row in rows:
+		index += 1
 		row_list = list(row.split(","))
 		if row_list == [""]:
 				break
 
-		time.append(np.float32(row_list[2]))
-		state.append(int(row_list[5]))
+		if index % 2 == 1: # only want end times
+			time.append(np.float32(row_list[2]))
+			state.append(int(row_list[5]))
 
 	return [time, state]
 
@@ -240,21 +243,27 @@ def label_dataframe(dataframe, cols, s = 0, e = 10000):
 
 	# (0,1), (0,2)
 	for index, row in dataframe.iterrows():
-		epoch_start = row["start"] # 1 
-		epoch_end = row["end"] # 2
+		period_start = float(row["start"]) # 1 
+		period_end = float(row["end"]) # 2
+		time = 0
+		state = 1
 
+
+		# print(f'my index is {index}, current epoch is ({epoch_start},{epoch_end})')
 		# if we passed the end time
-		# if 2 > 0.04
-		if epoch_end >= cols[0][time_state_i]:
-				# 1 < 0.04
-				if epoch_start < cols[0][time_state_i]:
-					states_col.append(4) # works with artifact : 4
+		# if 2 > 1703.07
+		if period_start > float(cols[time][time_state_i]):
+				time_state_i += 1
+				print(f"time we're on: {cols[0][time_state_i]}")
+				print(f'my time is {time_state_i}, current epoch is ({period_start},{period_end})')
+		if period_end >= float(cols[time][time_state_i]):
+			# 1 < 0.04
+			if period_start < float(cols[0][time_state_i]):
+				states_col.append(4) # works with artifact : 4
 
-				else:
-					states_col.append(cols[1][time_state_i])
-				time_state_i += 2 # hop two because even rows denote starts
-					
-		else:
+			else:
 				states_col.append(cols[1][time_state_i])
+		else:
+			states_col.append(cols[1][time_state_i])
 
 	return(states_col)
