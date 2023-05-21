@@ -210,7 +210,7 @@ class inputMassager():
 			#print("c2 is", len(c2[0]))
 
 
-			df = pd.DataFrame(list(zip(startTime, endTime, c1, c2)), columns =['StartTime', 'EndTime', "c1", "c2"])
+			df = pd.DataFrame(list(zip(startTime, endTime, c1, c2)), columns =['start', 'end', "c1", "c2"])
 			# Edit our columns to get our desired output DF
 			
 			return df
