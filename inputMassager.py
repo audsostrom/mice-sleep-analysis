@@ -19,24 +19,23 @@ def isTextFile(filepath):
 class inputMassager():
 
 	def __init__(self):
-
-		self.filepath = ""
+		self.x = 0
 
 	# Opens a file selection dialog with optional message
-	# Returns True on valid filepath selection, False otherwise
+	# Returns filepath
 	def askForInput(self, title_msg = "Select Data File"):
 		root = tk.Tk()  #init tkinter root
 		root.withdraw() #Hide root window
 
 		#Filepath Determined by tk dialog
-		self.filepath = filedialog.askopenfilename(title = title_msg)
+		filepath = filedialog.askopenfilename(title = title_msg)
 
 
 		if not (os.path.exists(self.filepath)):
 			print("Cannot find file at path:", self.filepath)
-			return False
+			return ""
 		else:
-			return True
+			return filepath
 
 	# Opens the saved DataFrame
 	# Returns Df if successful, None otherwise
@@ -120,3 +119,82 @@ class inputMassager():
 			print("Cannot handle file", self.filepath)
 			return None			
 
+	# Makes periods of the same size form text file
+	# Takes filepath of txt file, period_size, and optional max periods.
+	def makePeriodFromTxt(self, filepath, periodSize, maxPeriods=None):
+
+		#Check that our filepath is a .txt
+		if (isTextFile(filepath)):
+
+			#open data for reading
+			dataFp = open(filepath, "r")
+
+			readingData = False
+			startTime, endTime, c1, c2 = [], [], [], []
+
+			#datapoint per period
+			datapoint_count = 0
+			period_count = 0
+			working_c1 = []
+			working_c2 = []
+
+			for line in dataFp.readlines():
+
+				if readingData:
+					#split the line by tabs and add the data to our column lists
+					data_list = line.split("\t")
+					stripped_time = re.sub("\s", "",data_list[1])
+
+					if ((maxPeriods!= None) and (period_count >= maxPeriods)):
+						break
+
+
+					#If our datapoint count is less than period_size
+					if datapoint_count < periodSize:
+
+						if datapoint_count == 0:
+							#time in seconds
+							time = stripped_time.split(":")
+							time = float((time[0]) * 60) + float(time[1])
+							startTime.append(time)
+
+						#add our new datapoints to working channels
+
+						working_c1.append(data_list[2])
+						working_c2.append(data_list[3])
+						datapoint_count +=1
+
+					# Add new row to our output df
+					else:
+
+						# time in seconds
+						time = stripped_time.split(":")
+						time = float((time[0]) * 60) + float(time[1])
+
+						# making our new row
+						endTime.append(time)
+						c1.append(working_c1)
+						c2.append(working_c2)
+
+						# clear out working sets
+						working_c1.clear()
+						working_c2.clear()
+
+						period_count += 1
+
+
+
+				#Ignore initial lines
+				else:
+					stripped = re.sub("\s", "", line)
+					#This line is the last line before data comes
+					if stripped == "(m:s.ms)(mV)(mV)":
+						readingData = True
+
+
+			dataFp.close()
+
+			df = pd.DataFrame(list(zip(startTime, endTime, c1, c2)), columns =['StartTime', 'EndTime', "c1", "c2"])
+			# Edit our columns to get our desired output DF
+			
+			return df
