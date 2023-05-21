@@ -31,8 +31,8 @@ class inputMassager():
 		filepath = filedialog.askopenfilename(title = title_msg)
 
 
-		if not (os.path.exists(self.filepath)):
-			print("Cannot find file at path:", self.filepath)
+		if not (os.path.exists(filepath)):
+			print("Cannot find file at path:", filepath)
 			return ""
 		else:
 			return filepath
@@ -137,20 +137,25 @@ class inputMassager():
 			period_count = 0
 			working_c1 = []
 			working_c2 = []
-
+			count = 0
 			for line in dataFp.readlines():
-
+				#print("We are here")
+				#print("count is:", count)
+				count += 1
 				if readingData:
 					#split the line by tabs and add the data to our column lists
 					data_list = line.split("\t")
 					stripped_time = re.sub("\s", "",data_list[1])
 
 					if ((maxPeriods!= None) and (period_count >= maxPeriods)):
+						#print("period count is", period_count)
+						#print("WE HAVE BROKE")
 						break
-
+					#print("We are now here")
 
 					#If our datapoint count is less than period_size
 					if datapoint_count < periodSize:
+						#print("datapoint count", datapoint_count, "Period size", periodSize)
 
 						if datapoint_count == 0:
 							#time in seconds
@@ -162,6 +167,8 @@ class inputMassager():
 
 						working_c1.append(data_list[2])
 						working_c2.append(data_list[3])
+						#print("data 2", working_c1)
+						#print("data 3", working_c2)
 						datapoint_count +=1
 
 					# Add new row to our output df
@@ -173,14 +180,20 @@ class inputMassager():
 
 						# making our new row
 						endTime.append(time)
+						assert len(working_c1) == periodSize
+						assert len(working_c2) == periodSize
+
 						c1.append(working_c1)
 						c2.append(working_c2)
 
 						# clear out working sets
-						working_c1.clear()
-						working_c2.clear()
+						working_c1 = []
+						working_c2 = []
 
 						period_count += 1
+						#print("period count is", period_count)
+						datapoint_count = 0
+						#print("We are also here")
 
 
 
@@ -193,6 +206,9 @@ class inputMassager():
 
 
 			dataFp.close()
+			#print("c1 is", len(c1[0]))
+			#print("c2 is", len(c2[0]))
+
 
 			df = pd.DataFrame(list(zip(startTime, endTime, c1, c2)), columns =['StartTime', 'EndTime', "c1", "c2"])
 			# Edit our columns to get our desired output DF
