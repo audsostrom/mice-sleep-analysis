@@ -160,7 +160,7 @@ class inputMassager():
 						if datapoint_count == 0:
 							#time in seconds
 							time = stripped_time.split(":")
-							time = float((time[0]) * 60) + float(time[1])
+							time = float(float(time[0]) * 60) + float(time[1])
 							startTime.append(time)
 
 						#add our new datapoints to working channels
@@ -176,7 +176,7 @@ class inputMassager():
 
 						# time in seconds
 						time = stripped_time.split(":")
-						time = float((time[0]) * 60) + float(time[1])
+						time = float(float(time[0]) * 60) + float(time[1])
 
 						# making our new row
 						endTime.append(time)
