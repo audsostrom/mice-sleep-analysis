@@ -165,8 +165,8 @@ class inputMassager():
 
 						#add our new datapoints to working channels
 
-						working_c1.append(np.float16(data_list[2]))
-						working_c2.append(np.float16(data_list[3]))
+						working_c1.append(data_list[2])
+						working_c2.append(data_list[3])
 						#print("data 2", working_c1)
 						#print("data 3", working_c2)
 						datapoint_count +=1
@@ -214,3 +214,47 @@ class inputMassager():
 			# Edit our columns to get our desired output DF
 			
 			return df
+
+def find_time_labels(dataframe, filepath):
+	#Check that our filepath is a .txt")
+	time, state = [], []
+	
+	data_an = open(filepath) # open and read file
+	r = data_an.read()
+	data_an.close()
+
+	rows = list(r.split("\n")) # list of each row (strings)
+	for row in rows:
+		row_list = list(row.split(","))
+		if row_list == [""]:
+				break
+
+		time.append(np.float32(row_list[2]))
+		state.append(int(row_list[5]))
+
+	return [time, state]
+
+def label_dataframe(dataframe, cols, s = 0, e = 10000):
+	states_col = []
+	time_state_i = 0
+
+	# (0,1), (0,2)
+	for index, row in dataframe.iterrows():
+		epoch_start = row["start"] # 1 
+		epoch_end = row["end"] # 2
+
+		# if we passed the end time
+		# if 2 > 0.04
+		if epoch_end >= cols[0][time_state_i]:
+				# 1 < 0.04
+				if epoch_start < cols[0][time_state_i]:
+					states_col.append(4) # works with artifact : 4
+
+				else:
+					states_col.append(cols[1][time_state_i])
+				time_state_i += 2 # hop two because even rows denote starts
+					
+		else:
+				states_col.append(cols[1][time_state_i])
+
+	return(states_col)
