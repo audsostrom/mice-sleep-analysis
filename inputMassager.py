@@ -206,8 +206,8 @@ class inputMassager():
 
 
 			dataFp.close()
-			#print("c1 is", len(c1[0]))
-			#print("c2 is", len(c2[0]))
+			print("c1 is", len(c1))
+			print("c2 is", len(c2))
 
 
 			df = pd.DataFrame(zip(startTime, endTime, c1, c2), columns =['start', 'end', "c1", "c2"])
@@ -273,48 +273,97 @@ def label_dataframe(dataframe, cols, s = 0, e = 10000):
 # cols is array of arrays of [end time, label]
 def label_dataframe_new(dataframe, cols):
 
+
+	cols_len = len(cols[0])
+	assert cols_len == len(cols[1])
+ 
 	labeled_periods = []
 	periods_to_label = dataframe.shape[0]
 	print("periods to label", periods_to_label)
 
+	last_annotated_label = None
 	annotated_index = 0
 	# (0,1), (0,2)
 
 	#iterate over the periods
 	for period_index, row in dataframe.iterrows():
 		
+  
+		#Case for if we're out of annotations
+		if annotated_index >= cols_len:
+			if last_annotated_label != None:
+					labeled_periods.append(last_annotated_label)
+			else:
+				# Get a ref to our last label
+				last_annotated_label = cols[1][annotated_index -1]
+			break
+  
+		#Annotated end marker
 		annotated_end = cols[0][annotated_index]
-		annotated_start = 0 # cols[0][annotated_index-1]
-		annotated_label = cols[1][annotated_index]
 
-
-		period_start = row["start"][period_index] # 1 
-		period_end = row["end"][period_index] # 2
-
+		# Previous annotated end (set to 0 at the start)
+		annotated_start = cols[0][annotated_index-1] if (annotated_index-1 > 0) else 0
 		
-		# Period is entirelt within annotation range
+		# Label of the annotated range
+		annotated_label = cols[1][annotated_index]
+		
+
+		period_start = row["start"] # 1 
+		period_end = row["end"] # 2
+
+		# ==== cases that period and annotated overlap ==== #		
+  
+		# Period is entirely within annotation range
 		if((period_start >= annotated_start) and (period_end <= annotated_end)): # 3
+			# print("starts", period_start, ">=", annotated_start, " ends:", period_end, "<=", annotated_end, "label:", cols[1][annotated_index])
 			# we advance periods, classify as annotated label
 			labeled_periods.append(annotated_label)
-		
+
 		# If period is straddling the left side of the annotation
 		elif (period_start < annotated_start and (period_end < annotated_end)): # 4
-			#append artifact label
+			# we advance periods append artifact label
 			labeled_periods.append(4)
 		
-		# If period is larger than annotated range
-		elif ((period_start < annotated_start) and (period_end > annotated_end) ): # 2
-			
-		# Otherwise, period start >= annotated_start!
-		# We switch to a new annotation index
-		else: # 1
+		# If period is larger than the entire annotated range
+		elif ((period_start <= annotated_start) and (period_end >= annotated_end)): # 2
+			# we advance periods append artifact label
+			labeled_periods.append(4)
+
+			# Because the period ends after the annotated range, we advance annotated index
 			annotated_index += 1
-			
+
+		# If period is straddling the right side of the annotated range
+		elif ((period_start > annotated_start) and (period_end > annotated_end)): # 1
+      		# we advance periods append artifact label
+			labeled_periods.append(4)
+	
+			# Because the period ends after the annotated range, we advance annotated index
+			annotated_index += 1
+
 		
+		# ==== cases that period and annotated are disjoint ==== #		
+		
+		elif (period_start >= annotated_end): # If period is completely after annotated range	
+   
+			check = annotated_end
+
+			# continue increasing annotated range until annotated has "caught up"
+			while (period_start >= check):
+				annotated_index += 1
+	
+				# making the new annotated end to check
+				check = cols[0][annotated_index]
+			#print("We are here")
 			
 
-			
-		
+		# If annotated range is completely after period
+		elif(period_end <= annotated_start):
+			# This should not happen EVER
+			# Artifacting may not always be the correct answer, but it's likely correct
+      		# we advance periods append artifact label
+			labeled_periods.append(4)			
 
-		print(period_start, period_end)
-	return
+		else:
+			print("some other case! period:", period_start,"-" ,period_end,"annotated:", annotated_start, "-",annotated_end  )
+
+	return labeled_periods
