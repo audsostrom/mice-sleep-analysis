@@ -165,8 +165,8 @@ class inputMassager():
 
 						#add our new datapoints to working channels
 
-						working_c1.append(data_list[2])
-						working_c2.append(data_list[3])
+						working_c1.append(float(data_list[2]))
+						working_c2.append(float(data_list[3]))
 						#print("data 2", working_c1)
 						#print("data 3", working_c2)
 						datapoint_count +=1
@@ -210,7 +210,7 @@ class inputMassager():
 			#print("c2 is", len(c2[0]))
 
 
-			df = pd.DataFrame(list(zip(startTime, endTime, c1, c2)), columns =['start', 'end', "c1", "c2"])
+			df = pd.DataFrame(zip(startTime, endTime, c1, c2), columns =['start', 'end', "c1", "c2"])
 			# Edit our columns to get our desired output DF
 			
 			return df
