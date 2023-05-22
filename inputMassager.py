@@ -267,3 +267,54 @@ def label_dataframe(dataframe, cols, s = 0, e = 10000):
 			states_col.append(cols[1][time_state_i])
 
 	return(states_col)
+
+# trying to redo this
+# dataframe is [start time, end time, [c1 datapoints], [c2 datapoints]]
+# cols is array of arrays of [end time, label]
+def label_dataframe_new(dataframe, cols):
+
+	labeled_periods = []
+	periods_to_label = dataframe.shape[0]
+	print("periods to label", periods_to_label)
+
+	annotated_index = 0
+	# (0,1), (0,2)
+
+	#iterate over the periods
+	for period_index, row in dataframe.iterrows():
+		
+		annotated_end = cols[0][annotated_index]
+		annotated_start = 0 # cols[0][annotated_index-1]
+		annotated_label = cols[1][annotated_index]
+
+
+		period_start = row["start"][period_index] # 1 
+		period_end = row["end"][period_index] # 2
+
+		
+		# Period is entirelt within annotation range
+		if((period_start >= annotated_start) and (period_end <= annotated_end)): # 3
+			# we advance periods, classify as annotated label
+			labeled_periods.append(annotated_label)
+		
+		# If period is straddling the left side of the annotation
+		elif (period_start < annotated_start and (period_end < annotated_end)): # 4
+			#append artifact label
+			labeled_periods.append(4)
+		
+		# If period is larger than annotated range
+		elif ((period_start < annotated_start) and (period_end > annotated_end) ): # 2
+			
+		# Otherwise, period start >= annotated_start!
+		# We switch to a new annotation index
+		else: # 1
+			annotated_index += 1
+			
+		
+			
+
+			
+		
+
+		print(period_start, period_end)
+	return
