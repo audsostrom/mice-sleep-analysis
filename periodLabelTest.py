@@ -14,8 +14,10 @@ massager = inputMassager()
 filepath = R"C:\Users\0feig\Desktop\CHDCtrl1_CHD801FR_normal\CHD801FR_20221123_normal.txt"
 
 #Create intermediate dataframe
-print("Making period from txt")
-intermediate = massager.makePeriodFromTxt(filepath, 200)
+period_size = 10000
+print("Making period from txt, period size:", period_size)
+
+intermediate = massager.makePeriodFromTxt(filepath, period_size)
 
 # Get all end time labels
 print("finding time labels")
@@ -25,6 +27,7 @@ cols = find_time_labels(intermediate, R"C:\Users\0feig\Desktop\CHDCtrl1_CHD801FR
 print("running label dataframe new")
 output = label_dataframe_new(intermediate, cols)
 
+print("period size: ")
 
 print("\n\noutput of out new labeling, period count:", len(output))
 
