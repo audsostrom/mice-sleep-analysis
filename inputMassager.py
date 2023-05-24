@@ -287,7 +287,6 @@ def label_dataframe_new(dataframe, cols):
  
 	labeled_periods = []
 	periods_to_label = dataframe.shape[0]
-
 	last_annotated_label = None
 	annotated_index = 0
 
@@ -304,7 +303,8 @@ def label_dataframe_new(dataframe, cols):
 			else:
 				# Get a ref to our last annotated label
 				last_annotated_label = cols[1][annotated_index -1]
-			break
+				labeled_periods.append(last_annotated_label)
+			continue
   
 		#Annotated end marker
 		annotated_end = cols[0][annotated_index]
@@ -374,7 +374,7 @@ def label_dataframe_new(dataframe, cols):
 		# debugging else case, not needed
 		# else:
 		# 	print("some other case! period:", period_start,"-" ,period_end,"annotated:", annotated_start, "-",annotated_end  )
-
+	
 	return torch.tensor(labeled_periods), torch.tensor(dataframe["c1"]), torch.tensor(dataframe["c2"])
 
 
