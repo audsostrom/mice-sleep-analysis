@@ -119,9 +119,10 @@ class inputMassager():
 			print("Cannot handle file", self.filepath)
 			return None			
 
-	# Makes periods of the same size form text file
-	# Takes filepath of txt file, period_size, and optional max periods.
-	def makePeriodFromTxt(self, filepath, periodSize, maxPeriods=None):
+# Takes: data filepath, periodSize, maximumPeriods(optional)
+# Returns: dataframe with columns ['start', 'end', "c1", "c2"]
+# Makes periods of the same size from the text file
+def makePeriodFromTxt(filepath, periodSize, maxPeriods=None):
 
 		#Check that our filepath is a .txt
 		if (isTextFile(filepath)):
@@ -206,8 +207,8 @@ class inputMassager():
 
 
 			dataFp.close()
-			print("c1 is", len(c1))
-			print("c2 is", len(c2))
+			# print("c1 is", len(c1))
+			# print("c2 is", len(c2))
 
 
 			df = pd.DataFrame(zip(startTime, endTime, c1, c2), columns =['start', 'end', "c1", "c2"])
@@ -215,7 +216,10 @@ class inputMassager():
 			
 			return df
 
-def find_time_labels(dataframe, filepath):
+# Takes:    annotated data filepath
+# Returns:  list of the format [<annotated_timestamp>,<annotated_state>]
+# We ignore the start timestamps, and just manage stop timestamps
+def find_time_labels(filepath):
 	#Check that our filepath is a .txt")
 	time, state = [], []
 	
@@ -237,6 +241,8 @@ def find_time_labels(dataframe, filepath):
 
 	return [time, state]
 
+# Takes:   dataframe with columns ['start', 'end', "c1", "c2"], list
+# Returns: 
 def label_dataframe(dataframe, cols, s = 0, e = 10000):
 	states_col = []
 	time_state_i = 0
@@ -268,22 +274,22 @@ def label_dataframe(dataframe, cols, s = 0, e = 10000):
 
 	return(states_col)
 
-# trying to redo this
-# dataframe is [start time, end time, [c1 datapoints], [c2 datapoints]]
+# Takes:   dataframe, list
+# Returns: 3 Tensors: labels, c1, c2 
+# dataframe with columns ['start', 'end', "c1", "c2"], list of the format [<annotated_timestamp>,<annotated_state>]
 # cols is array of arrays of [end time, label]
 def label_dataframe_new(dataframe, cols):
 
-
 	cols_len = len(cols[0])
+
+	#Sanity check, c1 and c2 should be the same length
 	assert cols_len == len(cols[1])
  
 	labeled_periods = []
 	periods_to_label = dataframe.shape[0]
-	print("periods to label", periods_to_label)
 
 	last_annotated_label = None
 	annotated_index = 0
-	# (0,1), (0,2)
 
 	#iterate over the periods
 	for period_index, row in dataframe.iterrows():
@@ -292,9 +298,11 @@ def label_dataframe_new(dataframe, cols):
 		#Case for if we're out of annotations
 		if annotated_index >= cols_len:
 			if last_annotated_label != None:
+					# If we have a reference to our last annotated label, we assume the rest is that label
+					# Just append last annotated label until we run out of periods
 					labeled_periods.append(last_annotated_label)
 			else:
-				# Get a ref to our last label
+				# Get a ref to our last annotated label
 				last_annotated_label = cols[1][annotated_index -1]
 			break
   
@@ -363,7 +371,24 @@ def label_dataframe_new(dataframe, cols):
       		# we advance periods append artifact label
 			labeled_periods.append(4)			
 
-		else:
-			print("some other case! period:", period_start,"-" ,period_end,"annotated:", annotated_start, "-",annotated_end  )
+		# debugging else case, not needed
+		# else:
+		# 	print("some other case! period:", period_start,"-" ,period_end,"annotated:", annotated_start, "-",annotated_end  )
 
-	return labeled_periods
+	return torch.tensor(labeled_periods), torch.tensor(dataframe["c1"]), torch.tensor(dataframe["c2"])
+
+
+# Takes:   data filepath, annotated data filepath, and period size
+# Returns: 3 Tensors: labels, c1, c2 
+def get_labeled_data(data_filepath, annotated_filepath, period_size,  maxPeriods=None):
+
+	# Get intermediate df with c1, c2, and times
+	intermediateDf = makePeriodFromTxt(data_filepath, period_size)
+
+	# Get annotated time labels
+	annotated_labels = find_time_labels(annotated_filepath)
+
+	# Label our created periods and get our output tensors
+	labels, c1, c2 = label_dataframe_new(intermediateDf, annotated_labels)
+
+	return labels, c1, c2
