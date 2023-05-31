@@ -14,34 +14,34 @@ massager = inputMassager()
 filepath = R"C:\Users\0feig\Desktop\CHDCtrl1_CHD801FR_normal\CHD801FR_20221123_normal.txt"
 
 #Create intermediate dataframe
-period_size = 10000
+period_size = 100
 print("Making period from txt, period size:", period_size)
 
-intermediate = massager.makePeriodFromTxt(filepath, period_size)
+intermediate = makePeriodFromTxt(filepath, period_size)
 
 # Get all end time labels
 print("finding time labels")
-cols = find_time_labels(intermediate, R"C:\Users\0feig\Desktop\CHDCtrl1_CHD801FR_normal\CHD801FR_20221123_normal_annotated.txt")
+cols = find_time_labels(R"C:\Users\0feig\Desktop\CHDCtrl1_CHD801FR_normal\CHD801FR_20221123_normal_annotated.txt")
 
 #Test label_dataframe_new
 print("running label dataframe new")
-output = label_dataframe_new(intermediate, cols)
+labels, c1, c2  = label_dataframe_new(intermediate, cols)
 
 print("period size: ")
 
-print("\n\noutput of out new labeling, period count:", len(output))
+print("\n\noutput of out new labeling, period count:", len(labels))
 
 # Count periods in output
 one_period_c, two_period_c, three_period_c, four_period_c = 0, 0, 0, 0
-for label in output:
-    match str(label):
-        case "1":
+for label  in labels:
+    match label:
+        case 1:
             one_period_c += 1
-        case "2":
+        case 2:
             two_period_c += 1
-        case "3":
+        case 3:
             three_period_c += 1
-        case "4":
+        case 4:
             four_period_c += 1
         case _:
             print("broken", label)
@@ -81,7 +81,7 @@ total_annotated_c = one_annotated_sec + two_annotated_sec + three_annotated_sec
 one_percent = (one_annotated_sec/total_annotated_c)*100
 two_percent = (two_annotated_sec/total_annotated_c)*100
 three_percent =  (three_annotated_sec/total_annotated_c)*100
-avg_per = total_annotated_c/len(output)
+avg_per = total_annotated_c/len(labels)
 
 #spit out summary
 print("\nAnnotated Data Summary:")

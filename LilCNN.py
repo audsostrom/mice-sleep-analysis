@@ -18,7 +18,7 @@ from collections import OrderedDict
 
 import torch.utils.data as utils
 
-from sklearn.preprocessing import LabelBinarizer
+# from sklearn.preprocessing import LabelBinarizer
 
 import tkinter as tk #tk for file dialog (requires Jinja2!!!)
 from tkinter import filedialog #tkinter for file dialog
