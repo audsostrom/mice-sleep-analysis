@@ -37,87 +37,9 @@ class inputMassager():
 		else:
 			return filepath
 
-	# Opens the saved DataFrame
-	# Returns Df if successful, None otherwise
-	def getDfFromText(self):
-
-		#Check that our filepath is a .txt
-		if (isTextFile(self.filepath)):
-
-			#open data for reading
-			dataFp = open(self.filepath, "r")
-
-			readingData = False
-			col1, col2, col3 = [], [], []
-			for line in dataFp.readlines():
-
-				if readingData:
-					#split the line by tabs and add the data to our column lists
-					data_list = line.split("\t")
-					col1.append(data_list[1])
-					col2.append(data_list[2])
-					col3.append(data_list[3])
-
-				#Ignore initial lines
-				else:
-					stripped = re.sub("\s", "", line)
-					#This line is the last line before data comes
-					if stripped == "(m:s.ms)(mV)(mV)":
-						readingData = True
 
 
-			dataFp.close()
-
-			df = pd.DataFrame(list(zip(col1, col2, col3)), columns =['Time', 'Channel1', "Channel2"])
-			return df
-
-		else:
-			print("Cannot handle file", self.filepath)
-			return None
-
-
-	def getTensorFromText(self, maxSize=None):
-		#Check that our filepath is a .txt")
-		if (isTextFile(self.filepath)):
-
-			#open data for reading
-			dataFp = open(self.filepath, "r")
-
-			readingData = False
-			col1, col2, col3,  col4 = [], [], [], []
-
-			line_count = 0
-			for line in dataFp.readlines():
-				if ((maxSize != None) and (maxSize <= line_count)):
-					break
-
-				if readingData:
-					#split the line by tabs and add the data to our column lists
-					data_list = line.split("\t")
-					stripped_time = re.sub("\s", "",data_list[1])
-					time = stripped_time.split(":")
-
-					col1.append(int(time[0]))
-					col2.append(np.float16(time[1]))
-					col3.append(np.float16(re.sub("\s", "",data_list[2])))
-					col4.append(np.float16(re.sub("\s", "",data_list[3])))
-
-					line_count += 1
-
-				#Ignore initial lines
-				else:
-					
-					stripped = re.sub("\s", "", line)
-					#This line is the last line before data comes
-					if stripped == "(m:s.ms)(mV)(mV)":
-						readingData = True
-
-			dataFp.close()
-			ten = torch.tensor([col1, col2, col3, col4],  dtype=torch.float16)
-			return ten
-		else:
-			print("Cannot handle file", self.filepath)
-			return None			
+		
 
 # Takes: data filepath, periodSize, maximumPeriods(optional)
 # Returns: dataframe with columns ['start', 'end', "c1", "c2"]
@@ -241,44 +163,13 @@ def find_time_labels(filepath):
 
 	return [time, state]
 
-# Takes:   dataframe with columns ['start', 'end', "c1", "c2"], list
-# Returns: 
-def label_dataframe(dataframe, cols, s = 0, e = 10000):
-	states_col = []
-	time_state_i = 0
 
-	# (0,1), (0,2)
-	for index, row in dataframe.iterrows():
-		period_start = float(row["start"]) # 1 
-		period_end = float(row["end"]) # 2
-		time = 0
-		state = 1
-
-
-		# print(f'my index is {index}, current epoch is ({epoch_start},{epoch_end})')
-		# if we passed the end time
-		# if 2 > 1703.07
-		if period_start > float(cols[time][time_state_i]):
-				time_state_i += 1
-				print(f"time we're on: {cols[0][time_state_i]}")
-				print(f'my time is {time_state_i}, current epoch is ({period_start},{period_end})')
-		if period_end >= float(cols[time][time_state_i]):
-			# 1 < 0.04
-			if period_start < float(cols[0][time_state_i]):
-				states_col.append(4) # works with artifact : 4
-
-			else:
-				states_col.append(cols[1][time_state_i])
-		else:
-			states_col.append(cols[1][time_state_i])
-
-	return(states_col)
 
 # Takes:   dataframe, list
 # Returns: 3 Tensors: labels, c1, c2 
 # dataframe with columns ['start', 'end', "c1", "c2"], list of the format [<annotated_timestamp>,<annotated_state>]
 # cols is array of arrays of [end time, label]
-def label_dataframe_new(dataframe, cols):
+def label_dataframe_new(dataframe, cols, period_size):
 
 	cols_len = len(cols[0])
 
@@ -374,13 +265,23 @@ def label_dataframe_new(dataframe, cols):
 		# debugging else case, not needed
 		# else:
 		# 	print("some other case! period:", period_start,"-" ,period_end,"annotated:", annotated_start, "-",annotated_end  )
+		#make appropriately shaped tensors for the eeg and emg data
+	#initialize empty tensors of size [num of samples, 1, period_size]
+	c1_tensor = torch.zeros((len(dataframe.c1.values), 1, period_size)) 
+	c2_tensor = torch.zeros((len(dataframe.c2.values), 1, period_size))
+
+	#add each sample of data to the eeg and emg tensors
+	for i in range(len(dataframe.c1.values)):
+		c1_tensor[i, 0] = torch.tensor(dataframe.c1.values[i])
+		c2_tensor[i, 0] = torch.tensor(dataframe.c1.values[i])	
 	
-	return torch.tensor(labeled_periods), torch.tensor(dataframe["c1"]), torch.tensor(dataframe["c2"])
+	return torch.tensor(labeled_periods), c1_tensor, c2_tensor
 
 
 # Takes:   data filepath, annotated data filepath, and period size
 # Returns: 3 Tensors: labels, c1, c2 
 def get_labeled_data(data_filepath, annotated_filepath, period_size,  maxPeriods=None):
+
 
 	# Get intermediate df with c1, c2, and times
 	intermediateDf = makePeriodFromTxt(data_filepath, period_size)
@@ -389,6 +290,13 @@ def get_labeled_data(data_filepath, annotated_filepath, period_size,  maxPeriods
 	annotated_labels = find_time_labels(annotated_filepath)
 
 	# Label our created periods and get our output tensors
-	labels, c1, c2 = label_dataframe_new(intermediateDf, annotated_labels)
+	labels, c1, c2 = label_dataframe_new(intermediateDf, annotated_labels, period_size)
 
-	return labels, c1, c2
+	
+	#generate foureir transformed data for eeg signal, same format/dimesions as c1 and c2
+	eeg_FT = [torch.fft.fft(period) for period in intermediateDf("c1")]
+
+    #generate foureir transformed data for emg, same format/dimesions as c1 and c2
+	emg_FT = [torch.fft.fft(period) for period in intermediateDf("c2")]
+
+	return labels, c1, c2, eeg_FT, emg_FT
