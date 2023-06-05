@@ -267,15 +267,25 @@ def label_dataframe_new(dataframe, cols, period_size):
 		# 	print("some other case! period:", period_start,"-" ,period_end,"annotated:", annotated_start, "-",annotated_end  )
 		#make appropriately shaped tensors for the eeg and emg data
 	#initialize empty tensors of size [num of samples, 1, period_size]
-	c1_tensor = torch.zeros((len(dataframe.c1.values), 1, period_size)) 
-	c2_tensor = torch.zeros((len(dataframe.c2.values), 1, period_size))
+	eeg_tensor = torch.zeros((len(dataframe.c1.values), 1, period_size)) 
+	emg_tensor = torch.zeros((len(dataframe.c2.values), 1, period_size))
 
 	#add each sample of data to the eeg and emg tensors
 	for i in range(len(dataframe.c1.values)):
-		c1_tensor[i, 0] = torch.tensor(dataframe.c1.values[i])
-		c2_tensor[i, 0] = torch.tensor(dataframe.c1.values[i])	
+		eeg_tensor[i, 0] = torch.tensor(dataframe.c1.values[i])
+		emg_tensor[i, 0] = torch.tensor(dataframe.c1.values[i])	
 	
-	return torch.tensor(labeled_periods), c1_tensor, c2_tensor
+	return torch.tensor(labeled_periods), eeg_tensor, emg_tensor
+
+def get_fourier_transform(dataframe, col):
+	fft_tensor = torch.zeros((len(dataframe[col].values), 1, 200))
+
+	for index, row in dataframe.iterrows():
+    	#pt = torch.tensor(dataframe[col])
+		fft_tensor[index, 0] = torch.fft.fft(torch.tensor(row[col]))
+
+	return fft_tensor
+    
 
 
 # Takes:   data filepath, annotated data filepath, and period size
@@ -294,9 +304,15 @@ def get_labeled_data(data_filepath, annotated_filepath, period_size,  maxPeriods
 
 	
 	#generate foureir transformed data for eeg signal, same format/dimesions as c1 and c2
-	eeg_FT = [torch.fft.fft(period) for period in intermediateDf("c1")]
+	#eeg_FT = [torch.fft.fft(period) for period in intermediateDf("c1")]
+	#eeg_FFT = [torch.fft.fft(torch.tensor(period['c1'])) for index, period in intermediateDf.iterrows()]
+	eeg_FFT = get_fourier_transform(intermediateDf, 'c1')
+
+
 
     #generate foureir transformed data for emg, same format/dimesions as c1 and c2
-	emg_FT = [torch.fft.fft(period) for period in intermediateDf("c2")]
+	#emg_FT = [torch.fft.fft(period) for period in intermediateDf("c2")]
+	#emg_FFT = [torch.fft.fft(torch.tensor(period['c2'])) for index, period in intermediateDf.iterrows()]
+	emg_FFT = get_fourier_transform(intermediateDf, 'c2')
 
-	return labels, c1, c2, eeg_FT, emg_FT
+	return labels, c1, c2, eeg_FFT, emg_FFT
