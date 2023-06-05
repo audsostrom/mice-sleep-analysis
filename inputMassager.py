@@ -221,12 +221,12 @@ def label_dataframe_new(dataframe, cols, period_size):
 		# If period is straddling the left side of the annotation
 		elif (period_start < annotated_start and (period_end < annotated_end)): # 4
 			# we advance periods append artifact label
-			labeled_periods.append(0)
+			labeled_periods.append(4)
 		
 		# If period is larger than the entire annotated range
 		elif ((period_start <= annotated_start) and (period_end >= annotated_end)): # 2
 			# we advance periods append artifact label
-			labeled_periods.append(0)
+			labeled_periods.append(4)
 
 			# Because the period ends after the annotated range, we advance annotated index
 			annotated_index += 1
@@ -234,7 +234,7 @@ def label_dataframe_new(dataframe, cols, period_size):
 		# If period is straddling the right side of the annotated range
 		elif ((period_start > annotated_start) and (period_end > annotated_end)): # 1
       		# we advance periods append artifact label
-			labeled_periods.append(0)
+			labeled_periods.append(4)
 	
 			# Because the period ends after the annotated range, we advance annotated index
 			annotated_index += 1
@@ -294,7 +294,7 @@ def get_labeled_data(data_filepath, annotated_filepath, period_size,  maxPeriods
 
 
 	# Get intermediate df with c1, c2, and times
-	intermediateDf = makePeriodFromTxt(data_filepath, period_size)
+	intermediateDf = makePeriodFromTxt(data_filepath, period_size, maxPeriods)
 
 	# Get annotated time labels
 	annotated_labels = find_time_labels(annotated_filepath)
