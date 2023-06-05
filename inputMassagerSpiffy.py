@@ -172,8 +172,6 @@ def find_time_labels(filepath):
 def label_dataframe_new(dataframe, cols, period_size, percentage=1.0):
 
 	cols_len = len(cols[0])
-	the_last = cols[0][cols_len - 1]
-	the_last_label = cols[1][cols_len - 1]
 
 	#Sanity check, c1 and c2 should be the same length
 	assert cols_len == len(cols[1])
@@ -196,7 +194,6 @@ def label_dataframe_new(dataframe, cols, period_size, percentage=1.0):
 	for period_index, row in dataframe.iterrows():
         #Case for if we're out of annotations
 		if (annotated_index >= cols_len):
-			print("fuck")
 			if (last_annotated_label != None):
                     # If we have a reference to our last annotated label, we assume the rest is that label
                     # Just append last annotated label until we run out of periods
@@ -237,7 +234,6 @@ def label_dataframe_new(dataframe, cols, period_size, percentage=1.0):
 						annotated_label = cols[1][annotated_index]
 					else:
 						#no more annotated data
-						print("the last iteration", annotated_start, annotated_end, annotated_label)
 						annotated_start = period_start
 						annotated_end = period_end
 			#why doesn't it go to the end of the annotated data?
@@ -246,22 +242,14 @@ def label_dataframe_new(dataframe, cols, period_size, percentage=1.0):
 			time = period_end - annotated_start
 			cTimes.update({annotated_label:(time + cTimes.get(annotated_label, 0))})
 			total = 0
-			print(cTimes)
 			for t in cTimes.values():
 				total += t
-			print(max(cTimes, key=cTimes.get))
-			print(cTimes.get(max(cTimes, key=cTimes.get)), total)
 			if ((cTimes.get(max(cTimes, key=cTimes.get)) / total) >= percentage):
 				label = max(cTimes, key=cTimes.get)
 			else:
-				print("WHAT THE FUCKK!!!", cTimes.get(max(cTimes, key=cTimes.get)), total)
 				label = 0
 			labeled_periods.append(label)			
 
-	#sanity check
-	print(the_last, the_last_label)
-	print(dataframe.shape)
-	print(len(labeled_periods))
 		# debugging else case, not needed
 		# else:
 		# 	print("some other case! period:", period_start,"-" ,period_end,"annotated:", annotated_start, "-",annotated_end  )
