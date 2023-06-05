@@ -169,6 +169,8 @@ def find_time_labels(filepath):
 # Returns: 3 Tensors: labels, c1, c2 
 # dataframe with columns ['start', 'end', "c1", "c2"], list of the format [<annotated_timestamp>,<annotated_state>]
 # cols is array of arrays of [end time, label]
+# percentage is the fraction the largest classification in an artifacted period must be for the whole period to be classified as such
+# otherwise it is classified as an artifact
 def label_dataframe_new(dataframe, cols, period_size, percentage=1.0):
 
 	cols_len = len(cols[0])
