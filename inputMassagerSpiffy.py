@@ -291,18 +291,11 @@ def get_labeled_data(data_filepath, annotated_filepath, period_size,  maxPeriods
 
 	# Label our created periods and get our output tensors
 	labels, c1, c2 = label_dataframe_new(intermediateDf, annotated_labels, period_size)
-
 	
 	#generate foureir transformed data for eeg signal, same format/dimesions as c1 and c2
-	#eeg_FT = [torch.fft.fft(period) for period in intermediateDf("c1")]
-	#eeg_FFT = [torch.fft.fft(torch.tensor(period['c1'])) for index, period in intermediateDf.iterrows()]
 	eeg_FFT = get_fourier_transform(intermediateDf, 'c1')
 
-
-
-    #generate foureir transformed data for emg, same format/dimesions as c1 and c2
-	#emg_FT = [torch.fft.fft(period) for period in intermediateDf("c2")]
-	#emg_FFT = [torch.fft.fft(torch.tensor(period['c2'])) for index, period in intermediateDf.iterrows()]
+    	#generate foureir transformed data for emg, same format/dimesions as c1 and c2
 	emg_FFT = get_fourier_transform(intermediateDf, 'c2')
 
 	return labels, c1, c2, eeg_FFT, emg_FFT
