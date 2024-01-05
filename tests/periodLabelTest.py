@@ -11,7 +11,7 @@ massager = inputMassager()
 #filepath = massager.askForInput("Blah!")
 
 #Hardcoded Path
-filepath = R"C:\Users\0feig\Desktop\CHDCtrl1_CHD801FR_normal\CHD801FR_20221123_normal.txt"
+filepath = R"C:\Users\thesp\Desktop\CHDCtrl1_CHD801FR_normal\CHD801FR_20221123_normal.txt"
 
 #Create intermediate dataframe
 period_size = 100
@@ -21,13 +21,11 @@ intermediate = makePeriodFromTxt(filepath, period_size)
 
 # Get all end time labels
 print("finding time labels")
-cols = find_time_labels(R"C:\Users\0feig\Desktop\CHDCtrl1_CHD801FR_normal\CHD801FR_20221123_normal_annotated.txt")
+cols = find_time_labels(R"C:\Users\thesp\Desktop\CHDCtrl1_CHD801FR_normal\CHD801FR_20221123_normal_annotated.txt")
 
 #Test label_dataframe_new
 print("running label dataframe new")
-labels, c1, c2  = label_dataframe_new(intermediate, cols)
-
-print("period size: ")
+labels, c1, c2  = label_dataframe_new(intermediate, cols, period_size)
 
 print("\n\noutput of out new labeling, period count:", len(labels))
 
@@ -41,7 +39,7 @@ for label  in labels:
             two_period_c += 1
         case 3:
             three_period_c += 1
-        case 4:
+        case 0:
             four_period_c += 1
         case _:
             print("broken", label)
@@ -56,9 +54,9 @@ four_percent = (four_period_c/total_c)*100
 #spit out output
 print("\n\nLabel_dataframe_new output summary:\n",
       "number of 1 periods:", one_period_c, " ", f"{one_percent:.2f}%","\n",
-      "number of 2 perios:", two_period_c, " ", f"{two_percent:.2f}%", "\n",
+      "number of 2 periods:", two_period_c, " ", f"{two_percent:.2f}%", "\n",
       "number of 3 periods:", three_period_c, " ",  f"{three_percent:.2f}%", "\n",
-      "number of 4 periods:", four_period_c, " ",  f"{four_percent:.2f}%", "\n",
+      "number of 0 (ARTIFACT) periods:", four_period_c, " ",  f"{four_percent:.2f}%", "\n",
       )
 
 #iter over all annotated labels and count time in each

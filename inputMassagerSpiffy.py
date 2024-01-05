@@ -169,98 +169,88 @@ def find_time_labels(filepath):
 # Returns: 3 Tensors: labels, c1, c2 
 # dataframe with columns ['start', 'end', "c1", "c2"], list of the format [<annotated_timestamp>,<annotated_state>]
 # cols is array of arrays of [end time, label]
-def label_dataframe_new(dataframe, cols, period_size):
+# percentage is the fraction the largest classification in an artifacted period must be for the whole period to be classified as such
+# otherwise it is classified as an artifact
+def label_dataframe_new(dataframe, cols, period_size, percentage=1.0):
 
 	cols_len = len(cols[0])
 
 	#Sanity check, c1 and c2 should be the same length
 	assert cols_len == len(cols[1])
- 
+
 	labeled_periods = []
 	periods_to_label = dataframe.shape[0]
 	last_annotated_label = None
 	annotated_index = 0
+ 
+	#Annotated end marker
+	annotated_end = cols[0][annotated_index]
 
-	#iterate over the periods
+    # Previous annotated end (set to 0 at the start)
+	annotated_start = cols[0][annotated_index-1] if (annotated_index-1 > 0) else 0
+   
+    # Label of the annotated range
+	annotated_label = cols[1][annotated_index]
+
+    #iterate over the periods
 	for period_index, row in dataframe.iterrows():
-		
-  
-		#Case for if we're out of annotations
-		if annotated_index >= cols_len:
-			if last_annotated_label != None:
-					# If we have a reference to our last annotated label, we assume the rest is that label
-					# Just append last annotated label until we run out of periods
+        #Case for if we're out of annotations
+		if (annotated_index >= cols_len):
+			if (last_annotated_label != None):
+                    # If we have a reference to our last annotated label, we assume the rest is that label
+                    # Just append last annotated label until we run out of periods
 					labeled_periods.append(last_annotated_label)
 			else:
-				# Get a ref to our last annotated label
+                # Get a ref to our last annotated label
 				last_annotated_label = cols[1][annotated_index -1]
 				labeled_periods.append(last_annotated_label)
 			continue
-  
-		#Annotated end marker
-		annotated_end = cols[0][annotated_index]
-
-		# Previous annotated end (set to 0 at the start)
-		annotated_start = cols[0][annotated_index-1] if (annotated_index-1 > 0) else 0
-		
-		# Label of the annotated range
-		annotated_label = cols[1][annotated_index]
-		
-
-		period_start = row["start"] # 1 
+   	
+		period_start = row["start"] # 1
 		period_end = row["end"] # 2
-
-		# ==== cases that period and annotated overlap ==== #		
-  
-		# Period is entirely within annotation range
-		if((period_start >= annotated_start) and (period_end <= annotated_end)): # 3
-			# print("starts", period_start, ">=", annotated_start, " ends:", period_end, "<=", annotated_end, "label:", cols[1][annotated_index])
-			# we advance periods, classify as annotated label
+       
+        # Period is entirely within annotation range
+		if ((period_start >= annotated_start) and (period_end <= annotated_end)): # 3
+            # print("starts", period_start, ">=", annotated_start, " ends:", period_end, "<=", annotated_end, "label:", cols[1][annotated_index])
+            # we advance periods, classify as annotated label
 			labeled_periods.append(annotated_label)
-
-		# If period is straddling the left side of the annotation
-		elif (period_start < annotated_start and (period_end < annotated_end)): # 4
-			# we advance periods append artifact label
-			labeled_periods.append(4)
-		
-		# If period is larger than the entire annotated range
-		elif ((period_start <= annotated_start) and (period_end >= annotated_end)): # 2
-			# we advance periods append artifact label
-			labeled_periods.append(4)
-
-			# Because the period ends after the annotated range, we advance annotated index
-			annotated_index += 1
-
-		# If period is straddling the right side of the annotated range
-		elif ((period_start > annotated_start) and (period_end > annotated_end)): # 1
-      		# we advance periods append artifact label
-			labeled_periods.append(4)
-	
-			# Because the period ends after the annotated range, we advance annotated index
-			annotated_index += 1
-
-		
-		# ==== cases that period and annotated are disjoint ==== #		
-		
-		elif (period_start >= annotated_end): # If period is completely after annotated range	
-   
-			check = annotated_end
-
-			# continue increasing annotated range until annotated has "caught up"
-			while (period_start >= check):
-				annotated_index += 1
-	
-				# making the new annotated end to check
-				check = cols[0][annotated_index]
-			#print("We are here")
-			
-
-		# If annotated range is completely after period
-		elif(period_end <= annotated_start):
-			# This should not happen EVER
-			# Artifacting may not always be the correct answer, but it's likely correct
-      		# we advance periods append artifact label
-			labeled_periods.append(4)			
+		#artifact analysis
+		else:
+			#we can assume that annotated start is larger or equal to period_start
+			cTimes = {}
+			while (annotated_end < period_end):
+				if (period_start >= annotated_start):
+					time = annotated_end - period_start
+				else:
+					time = annotated_end - annotated_start
+				cTimes.update({annotated_label:(time + cTimes.get(annotated_label, 0))})
+                #fix when you increment in case of overlap
+				if (annotated_end <= period_end):
+					annotated_index += 1
+					if (annotated_index < len(cols[0])):
+                        #Annotated end marker
+						annotated_end = cols[0][annotated_index]
+                        # Previous annotated end (set to 0 at the start)
+						annotated_start = cols[0][annotated_index-1] if (annotated_index-1 > 0) else 0
+                        # Label of the annotated range
+						annotated_label = cols[1][annotated_index]
+					else:
+						#no more annotated data
+						annotated_start = period_start
+						annotated_end = period_end
+			#why doesn't it go to the end of the annotated data?
+			print(period_end - period_start)
+			print(cTimes, period_end, period_start, annotated_start, annotated_end)
+			time = period_end - annotated_start
+			cTimes.update({annotated_label:(time + cTimes.get(annotated_label, 0))})
+			total = 0
+			for t in cTimes.values():
+				total += t
+			if ((cTimes.get(max(cTimes, key=cTimes.get)) / total) >= percentage):
+				label = max(cTimes, key=cTimes.get)
+			else:
+				label = 0
+			labeled_periods.append(label)			
 
 		# debugging else case, not needed
 		# else:
@@ -294,25 +284,18 @@ def get_labeled_data(data_filepath, annotated_filepath, period_size,  maxPeriods
 
 
 	# Get intermediate df with c1, c2, and times
-	intermediateDf = makePeriodFromTxt(data_filepath, period_size, maxPeriods)
+	intermediateDf = makePeriodFromTxt(data_filepath, period_size)
 
 	# Get annotated time labels
 	annotated_labels = find_time_labels(annotated_filepath)
 
 	# Label our created periods and get our output tensors
 	labels, c1, c2 = label_dataframe_new(intermediateDf, annotated_labels, period_size)
-
 	
 	#generate foureir transformed data for eeg signal, same format/dimesions as c1 and c2
-	#eeg_FT = [torch.fft.fft(period) for period in intermediateDf("c1")]
-	#eeg_FFT = [torch.fft.fft(torch.tensor(period['c1'])) for index, period in intermediateDf.iterrows()]
 	eeg_FFT = get_fourier_transform(intermediateDf, 'c1')
 
-
-
-    #generate foureir transformed data for emg, same format/dimesions as c1 and c2
-	#emg_FT = [torch.fft.fft(period) for period in intermediateDf("c2")]
-	#emg_FFT = [torch.fft.fft(torch.tensor(period['c2'])) for index, period in intermediateDf.iterrows()]
+    	#generate foureir transformed data for emg, same format/dimesions as c1 and c2
 	emg_FFT = get_fourier_transform(intermediateDf, 'c2')
 
 	return labels, c1, c2, eeg_FFT, emg_FFT
